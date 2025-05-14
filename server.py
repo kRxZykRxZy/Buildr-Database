@@ -93,11 +93,8 @@ def notifications(user):
         return list(notif_content.values())
     return "Error Occurred"
 
-index = 0
-
 @client.request
-def code(user, code):
-    global index
+def create(user, code):
     random_number = random.randint(100, 999)
     file_data = {
         "title": f"Untitled Project - {random_number}",
@@ -107,19 +104,35 @@ def code(user, code):
         "likes": 0,
         "favourites": 0
     }
-    if index == 0:
-        filename = f'{user}/{next_number(user)}.json'
-        create_or_update_file(filename, json.dumps(file_data), "New Project Created")
-        index = 1
-    else:
-        filename = f'{user}/{next_number(user) - 1}.json'
-        create_or_update_file(filename, json.dumps(file_data), "New Project Updated")
-    return "updated"
+    filename = '{user}/{next_number(user)}.json'
+    create_or_update_file(filename, json.dumps(file_data), "New Project Created")
+    return
 
 @client.request
-def share(user, code, name):
-    project_number = next_number(user) - 1
-    res = fetch(curl(f'{user}/{project_number}.json'))
+def update(user, code, name, id):
+    res = fetch(curl(f'{user}/{id}.json'))
+
+    if 'content' in res:
+        decoded_content = base64.b64decode(res['content']).decode()
+        file_content = json.loads(decoded_content)
+        
+    random_number = random.randint(100, 999)
+    file_data = {
+        "title": file_content["title"],
+        "visibility": file_content["visibility"],
+        "code": code,
+        "views": file_content["views"],
+        "likes": file_content["likes"], 
+        "favourites": file_content["favourites"]
+    }
+    
+    filename = f'{user}/{id}.json'
+    create_or_update_file(filename, json.dumps(file_data), "New Project Updated")
+    return "updated"
+    
+@client.request
+def share(user, code, name, id):
+    res = fetch(curl(f'{user}/{id}.json'))
 
     if 'content' in res:
         decoded_content = base64.b64decode(res['content']).decode()
@@ -131,7 +144,7 @@ def share(user, code, name):
             file_content["views"] = file_content.get("views", 0) + 1
             file_content["likes"] = file_content.get("likes", 0)
             file_content["favourites"] = file_content.get("favourites", 0)
-            create_or_update_file(f'{user}/{project_number - 1}.json', json.dumps(file_content), "Project Shared")
+            create_or_update_file(f'{user}/{id}.json', json.dumps(file_content), "Project Shared")
             return "Project shared."
     return "Failed to share."
 
