@@ -3,8 +3,9 @@ import requests as r
 import json
 import base64
 import random
+import os
 
-GITHUB_API_KEY = os.getenv('GH_KEY')
+GITHUB_API_KEY = os.getenv('GH_TOKEN')
 REPO_OWNER = "kRxZykRxZy"
 REPO_NAME = "Buildr-Database"
 BRANCH = "main"
@@ -104,7 +105,7 @@ def create(user, code):
         "likes": 0,
         "favourites": 0
     }
-    filename = '{user}/{next_number(user)}.json'
+    filename = f'{user}/{next_number(user)}.json'
     create_or_update_file(filename, json.dumps(file_data), "New Project Created")
     return
 
@@ -114,16 +115,16 @@ def update(user, code, name, id):
 
     if 'content' in res:
         decoded_content = base64.b64decode(res['content']).decode()
-        file_content = json.loads(decoded_content)
+        file = json.loads(decoded_content)
         
     random_number = random.randint(100, 999)
     file_data = {
-        "title": file_content["title"],
-        "visibility": file_content["visibility"],
+        "title": file["title"],
+        "visibility": file["visibility"],
         "code": code,
-        "views": file_content["views"],
-        "likes": file_content["likes"], 
-        "favourites": file_content["favourites"]
+        "views": file["views"],
+        "likes": file["likes"], 
+        "favourites": file["favourites"]
     }
     
     filename = f'{user}/{id}.json'
@@ -137,7 +138,10 @@ def share(user, code, name, id):
     if 'content' in res:
         decoded_content = base64.b64decode(res['content']).decode()
         file_content = json.loads(decoded_content)
-
+        
+    if 'content' not in res:
+        return "File not found"
+        
         if file_content.get("code") == code:
             file_content["title"] = name
             file_content["visibility"] = "Shared"
